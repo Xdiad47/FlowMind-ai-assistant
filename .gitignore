@@ -27,6 +27,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env
 
 # vercel
 .vercel
@@ -34,3 +35,21 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Python
+backend/venv/
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Backend secrets
+backend/.env
+
+# Firebase service account keys (NEVER commit these)
+*-firebase-adminsdk-*.json
+firebase-service-account*.json
+
+# IDE
+.idea/
+.vscode/
