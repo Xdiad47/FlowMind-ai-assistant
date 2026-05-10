@@ -19,13 +19,13 @@ async def search_threads(access_token: str, query: str, max_results: int = 30) -
     parsed_threads = []
 
     for raw in raw_threads:
-        # format=metadata skips downloading email bodies (much faster than format=full).
-        # No metadataHeaders filter — let Gmail return its default common headers
-        # (From, To, Cc, Bcc, Subject) to avoid serialisation quirks with the Python client.
+        # format=metadata with explicit metadataHeaders ensures From/Subject/Date
+        # are always returned regardless of email structure.
         t_data = service.users().threads().get(
             userId='me',
             id=raw['id'],
             format='metadata',
+            metadataHeaders=['From', 'Subject', 'Date', 'To'],
         ).execute()
 
         messages = t_data.get('messages', [])
@@ -37,9 +37,6 @@ async def search_threads(access_token: str, query: str, max_results: int = 30) -
         first_msg = messages[0]
         headers = first_msg.get('payload', {}).get('headers', [])
         header_map = {h['name'].lower(): h['value'] for h in headers}
-
-        # Debug: log available headers so you can verify From is returned
-        print(f"[gmail] thread {raw['id']}: header keys={list(header_map.keys())[:8]}")
 
         from_header = header_map.get('from', '')
         name, email = from_header, from_header

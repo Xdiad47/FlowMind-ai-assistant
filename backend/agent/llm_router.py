@@ -1,5 +1,5 @@
 # backend/agent/llm_router.py
-from backend.models.user import ApiProvider, UserPlan
+from backend.models.user import ApiProvider
 from backend.config.settings import settings
 
 def get_llm(provider: str | None, api_key: str | None, plan: str):
@@ -12,14 +12,11 @@ def get_llm(provider: str | None, api_key: str | None, plan: str):
     from langchain_google_genai import ChatGoogleGenerativeAI
     from langchain_groq import ChatGroq
     
-    # Hosted tier or free tier fallback — use platform's Groq key.
-    # llama3-groq-70b-8192-tool-use-preview is fine-tuned for reliable JSON tool calls;
-    # llama-3.3-70b-versatile sometimes emits <function=...> XML-style calls that Groq rejects.
     if not api_key:
         if settings.platform_groq_api_key:
             return ChatGroq(
                 api_key=settings.platform_groq_api_key,
-                model="llama3-groq-70b-8192-tool-use-preview",
+                model="meta-llama/llama-4-scout-17b-16e-instruct",
                 temperature=0,
             )
         raise ValueError("No API key available. Please add your API key in Settings.")
@@ -46,6 +43,6 @@ def get_llm(provider: str | None, api_key: str | None, plan: str):
         case ApiProvider.GROQ | _:
             return ChatGroq(
                 api_key=api_key,
-                model="llama3-groq-70b-8192-tool-use-preview",
+                model="meta-llama/llama-4-scout-17b-16e-instruct",
                 temperature=0,
             )
