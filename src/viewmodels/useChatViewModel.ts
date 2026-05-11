@@ -9,13 +9,14 @@ import type { StreamEvent, Message } from '@/models/Message';
 
 export function useChatViewModel() {
   const { user } = useAuthStore();
-  const { 
-    messages, 
-    isStreaming, 
-    activeToolCall, 
+  const {
+    messages,
+    isStreaming,
+    activeToolCall,
     pendingConfirmation,
     addMessage,
     updateLastMessage,
+    finalizeLastMessage,
     setStreaming,
     setActiveToolCall,
     setPendingConfirmation,
@@ -25,56 +26,8 @@ export function useChatViewModel() {
   const conversationIdRef = useRef(generateId());
   const sseBufferRef = useRef('');
 
-  const confirmAction = async () => {
+  const _streamResponse = async (content: string) => {
     if (!user) return;
-    setPendingConfirmation(null);
-    try {
-      await sendMessageService({
-        message: 'CONFIRM',
-        userId: user.id,
-        conversationId: conversationIdRef.current,
-      });
-    } catch (error) {
-      console.error('Failed to confirm action', error);
-      addMessage({
-        id: generateId(),
-        role: 'system',
-        status: 'error',
-        content: 'Failed to confirm action.',
-        timestamp: new Date().toISOString(),
-      });
-    }
-  };
-
-  const cancelAction = () => {
-    setPendingConfirmation(null);
-    addMessage({
-      id: generateId(),
-      role: 'system',
-      status: 'sent',
-      content: 'Action cancelled.',
-      timestamp: new Date().toISOString(),
-    });
-  };
-
-  const clearChat = async () => {
-    if (!user) return;
-    clearMessages();
-    await clearConversationService(user.id, conversationIdRef.current);
-    conversationIdRef.current = generateId(); // Reset conversation ID
-  };
-
-  const sendMessage = async (content: string) => {
-    if (isStreaming || !user) return;
-
-    const userMessage: Message = {
-      id: generateId(),
-      role: 'user',
-      content,
-      status: 'sent',
-      timestamp: new Date().toISOString(),
-    };
-    addMessage(userMessage);
 
     const assistantMessage: Message = {
       id: generateId(),
@@ -84,7 +37,7 @@ export function useChatViewModel() {
       timestamp: new Date().toISOString(),
     };
     addMessage(assistantMessage);
-    
+
     setStreaming(true);
     sseBufferRef.current = '';
 
@@ -110,17 +63,16 @@ export function useChatViewModel() {
           sseBufferRef.current += chunk;
 
           const lines = sseBufferRef.current.split('\n');
-          // Keep the last partial line in buffer
           sseBufferRef.current = lines.pop() || '';
 
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               const dataStr = line.replace('data: ', '').trim();
               if (!dataStr) continue;
-              
+
               try {
                 const event: StreamEvent = JSON.parse(dataStr);
-                
+
                 switch (event.type) {
                   case 'token':
                     if (event.content) {
@@ -150,19 +102,20 @@ export function useChatViewModel() {
                     }
                     break;
                   case 'done':
+                    finalizeLastMessage();
                     setStreaming(false);
-                    // Get latest messages from store via a ref or passing it? 
-                    // To be strictly correct we should use a hook to capture state.
-                    // Instead, we just trust the final state sync.
+                    // Save conversation using the live store state (not stale closure)
+                    const currentMessages = useChatStore.getState().messages;
                     saveConversation(user.id, {
                       id: conversationIdRef.current,
                       userId: user.id,
-                      messages: [], // We would map actual state here if we had access to latest state easily
+                      messages: currentMessages.filter(m => m.role !== 'system'),
                       createdAt: new Date().toISOString(),
-                      updatedAt: new Date().toISOString()
+                      updatedAt: new Date().toISOString(),
                     });
                     break;
                   case 'error':
+                    finalizeLastMessage();
                     setStreaming(false);
                     console.error('[Chat error]', event.content);
                     addMessage({
@@ -170,7 +123,7 @@ export function useChatViewModel() {
                       role: 'system',
                       status: 'error',
                       content: event.content || 'An error occurred during processing.',
-                      timestamp: new Date().toISOString()
+                      timestamp: new Date().toISOString(),
                     });
                     break;
                 }
@@ -182,16 +135,64 @@ export function useChatViewModel() {
         }
       }
     } catch (error) {
-      console.error('Error in sendMessage:', error);
+      console.error('Error in _streamResponse:', error);
+      finalizeLastMessage();
       setStreaming(false);
       addMessage({
         id: generateId(),
         role: 'system',
         status: 'error',
         content: 'Failed to send message or read stream.',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
+  };
+
+  const confirmAction = async () => {
+    if (!user) return;
+    setPendingConfirmation(null);
+    // Add a visible user message so the conversation shows what happened
+    addMessage({
+      id: generateId(),
+      role: 'user',
+      content: 'Yes, please proceed.',
+      status: 'sent',
+      timestamp: new Date().toISOString(),
+    });
+    await _streamResponse('Yes, please proceed.');
+  };
+
+  const cancelAction = () => {
+    setPendingConfirmation(null);
+    addMessage({
+      id: generateId(),
+      role: 'system',
+      status: 'sent',
+      content: 'Action cancelled.',
+      timestamp: new Date().toISOString(),
+    });
+  };
+
+  const clearChat = async () => {
+    if (!user) return;
+    clearMessages();
+    await clearConversationService(user.id, conversationIdRef.current);
+    conversationIdRef.current = generateId();
+  };
+
+  const sendMessage = async (content: string) => {
+    if (isStreaming || !user) return;
+
+    const userMessage: Message = {
+      id: generateId(),
+      role: 'user',
+      content,
+      status: 'sent',
+      timestamp: new Date().toISOString(),
+    };
+    addMessage(userMessage);
+
+    await _streamResponse(content);
   };
 
   return {

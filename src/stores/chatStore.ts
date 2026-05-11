@@ -15,6 +15,7 @@ interface ChatStore {
   pendingConfirmation: PendingConfirmation | null;
   addMessage: (message: Message) => void;
   updateLastMessage: (content: string) => void;
+  finalizeLastMessage: () => void;
   setStreaming: (streaming: boolean) => void;
   setActiveToolCall: (tool: ToolCall | null) => void;
   setPendingConfirmation: (confirmation: PendingConfirmation | null) => void;
@@ -34,9 +35,22 @@ export const useChatStore = create<ChatStore>((set) => ({
     set((state) => {
       const messages = [...state.messages];
       if (messages.length > 0) {
+        const last = messages[messages.length - 1];
+        messages[messages.length - 1] = {
+          ...last,
+          content: last.content + content,
+        };
+      }
+      return { messages };
+    }),
+
+  finalizeLastMessage: () =>
+    set((state) => {
+      const messages = [...state.messages];
+      if (messages.length > 0) {
         messages[messages.length - 1] = {
           ...messages[messages.length - 1],
-          content
+          status: 'sent',
         };
       }
       return { messages };

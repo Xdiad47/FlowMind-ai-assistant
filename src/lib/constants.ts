@@ -13,10 +13,14 @@ export const PLANS = {
 export const TOOL_LABELS: Record<string, string> = {
   get_calendar_events: '📅 Checking your calendar...',
   create_calendar_event: '📅 Creating event...',
-  search_emails: '📧 Searching Gmail...',
-  delete_emails: '🗑️ Preparing to delete emails...',
+  delete_calendar_event: '📅 Removing event...',
   get_availability: '📅 Checking availability...',
-  draft_reply: '✍️ Drafting reply...',
+  search_emails: '📧 Searching Gmail...',
+  count_emails: '📧 Counting emails...',
+  delete_emails: '🗑️ Preparing to delete emails...',
+  archive_emails: '📦 Archiving emails...',
+  mark_emails_as_read: '✅ Marking as read...',
+  draft_email_reply: '✍️ Drafting reply...',
 };
 
 export const SUPPORTED_AI_PROVIDERS = ['openai', 'anthropic', 'gemini', 'groq'] as const;

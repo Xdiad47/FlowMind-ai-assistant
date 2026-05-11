@@ -36,6 +36,7 @@ class CreateEventRequest(BaseModel):
     description: str | None = None
     attendees: list[str] = Field(default_factory=list)    # list of email strings
     location: str | None = None
+    add_google_meet: bool = True
 
 class GetEventsRequest(BaseModel):
     start: str    # ISO date string

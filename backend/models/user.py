@@ -16,12 +16,14 @@ class ApiProvider(str, Enum):
     HOSTED = "hosted"
 
 class UserPermissions(BaseModel):
-    can_delete_emails: bool = False
-    can_create_events: bool = True
-    can_edit_events: bool = True
-    can_delete_events: bool = False
-    can_reply_emails: bool = False
-    can_send_emails: bool = False
+    model_config = ConfigDict(populate_by_name=True)
+
+    can_delete_emails: bool = Field(False, alias='canDeleteEmails')
+    can_create_events: bool = Field(True, alias='canCreateEvents')
+    can_edit_events: bool = Field(True, alias='canEditEvents')
+    can_delete_events: bool = Field(False, alias='canDeleteEvents')
+    can_reply_emails: bool = Field(False, alias='canReplyEmails')
+    can_send_emails: bool = Field(False, alias='canSendEmails')
 
 class UserIntegrations(BaseModel):
     model_config = ConfigDict(populate_by_name=True)

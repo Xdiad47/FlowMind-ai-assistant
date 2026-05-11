@@ -1,4 +1,5 @@
 # backend/services/calendar_service.py
+import uuid
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from backend.models.calendar import CalendarEvent, CreateEventRequest, Attendee, AttendeeResponse
@@ -10,14 +11,12 @@ def _get_calendar_service(access_token: str):
 async def get_events(access_token: str, start: str, end: str) -> list[CalendarEvent]:
     """Fetch events from ALL user-subscribed calendars (not just primary)."""
     service = _get_calendar_service(access_token)
-    
-    # 1. Discover all calendars the user has
+
     calendar_list = service.calendarList().list().execute()
     all_calendars = calendar_list.get('items', [])
-    
+
     parsed_events = []
-    
-    # 2. Fetch events from each calendar
+
     for cal in all_calendars:
         cal_id = cal['id']
         cal_name = cal.get('summary', 'Unknown')
@@ -29,7 +28,7 @@ async def get_events(access_token: str, start: str, end: str) -> list[CalendarEv
                 singleEvents=True,
                 orderBy='startTime'
             ).execute()
-            
+
             for event in events_result.get('items', []):
                 attendees = []
                 for att in event.get('attendees', []):
@@ -38,7 +37,7 @@ async def get_events(access_token: str, start: str, end: str) -> list[CalendarEv
                         name=att.get('displayName'),
                         response_status=AttendeeResponse(att.get('responseStatus', 'needsAction'))
                     ))
-                
+
                 parsed_events.append(CalendarEvent(
                     id=event.get('id'),
                     title=event.get('summary', 'No Title'),
@@ -51,27 +50,41 @@ async def get_events(access_token: str, start: str, end: str) -> list[CalendarEv
                     source=f"google:{cal_name}"
                 ))
         except Exception:
-            # Skip calendars we can't access (e.g. permission issues)
             continue
-    
-    # 3. Sort all events by start time
+
     parsed_events.sort(key=lambda e: e.start_time)
     return parsed_events
 
 async def create_event(access_token: str, request: CreateEventRequest) -> CalendarEvent:
     service = _get_calendar_service(access_token)
-    
-    event_body = {
+
+    event_body: dict = {
         'summary': request.title,
         'description': request.description,
-        'start': {'dateTime': request.start_time},
-        'end': {'dateTime': request.end_time},
+        'start': {'dateTime': request.start_time, 'timeZone': 'Asia/Kolkata'},
+        'end': {'dateTime': request.end_time, 'timeZone': 'Asia/Kolkata'},
         'attendees': [{'email': email} for email in request.attendees],
-        'location': request.location
     }
-    
-    event = service.events().insert(calendarId='primary', body=event_body).execute()
-    
+
+    if request.location:
+        event_body['location'] = request.location
+
+    # Add Google Meet conference link when requested
+    if request.add_google_meet:
+        event_body['conferenceData'] = {
+            'createRequest': {
+                'requestId': str(uuid.uuid4()),
+                'conferenceSolutionKey': {'type': 'hangoutsMeet'}
+            }
+        }
+
+    event = service.events().insert(
+        calendarId='primary',
+        body=event_body,
+        conferenceDataVersion=1 if request.add_google_meet else 0,
+        sendUpdates='all' if request.attendees else 'none'
+    ).execute()
+
     return CalendarEvent(
         id=event.get('id'),
         title=event.get('summary'),
@@ -87,15 +100,14 @@ async def delete_event(access_token: str, event_id: str) -> None:
     service.events().delete(calendarId='primary', eventId=event_id).execute()
 
 async def get_availability(access_token: str, start: str, end: str) -> list[dict]:
+    """Returns busy time slots from freebusy query."""
     service = _get_calendar_service(access_token)
     body = {
         "timeMin": start,
         "timeMax": end,
         "items": [{"id": "primary"}]
     }
-    
+
     events_result = service.freebusy().query(body=body).execute()
     busy_slots = events_result.get('calendars', {}).get('primary', {}).get('busy', [])
-    
-    # We could invert this to show available slots, but returning busy slots is easier
     return busy_slots
