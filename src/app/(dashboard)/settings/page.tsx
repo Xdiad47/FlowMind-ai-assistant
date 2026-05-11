@@ -10,31 +10,30 @@ import { StepApiKey } from '@/components/onboarding/StepApiKey';
 import { Badge } from '@/components/shared/Badge';
 import { LogOut, Trash2, Key } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
 
 export default function SettingsPage() {
-  const { user, isLoading, updatePermissions, updateBriefingHour } = useSettingsViewModel();
-  const permissions = user?.permissions || {
-    allowEmailDelete: false, allowEmailSend: false,
-    allowEventCreate: false, allowEventEdit: false, allowEventDelete: false
+  const { user, isLoading, updatePermissions, updateBriefingHour, removeApiKey, revokeIntegration, chooseHostedPlan } = useSettingsViewModel();
+  const permissions = user?.permissions ?? {
+    canDeleteEmails: false, canSendEmails: false, canReplyEmails: false,
+    canCreateEvents: true, canEditEvents: true, canDeleteEvents: false,
   };
-  const briefingHour = user?.briefingHour || 8;
-  const { googleCalendarConnected, gmailConnected, microsoftCalendarConnected, outlookConnected: outlookMailConnected, setIntegration } = useIntegrationStore();
+  const briefingHour = user?.briefingHour ?? 8;
+  const { googleCalendarConnected, gmailConnected, microsoftCalendarConnected } = useIntegrationStore();
   const { signOut, user: authUser, saveApiKey } = useAuthViewModel();
 
   const [isSavingKey, setIsSavingKey] = useState(false);
   const [keyError, setKeyError] = useState<string | null>(null);
 
-  // Mock handlers for integration connect/revoke since real OAuth isn't wired fully
   const handleConnect = async (provider: string) => {
-    // Simulate connection
-    setIntegration(`${provider}Connected` as any, true);
+    // Google integrations are granted at OAuth login time — redirect to re-auth
+    if (provider === 'googleCalendar' || provider === 'gmail') {
+      // Trigger Google sign-in to re-grant scopes
+      window.location.href = '/api/auth/signin?callbackUrl=/settings';
+    }
   };
-  
+
   const handleRevoke = async (provider: string) => {
-    // Simulate revocation
-    setIntegration(`${provider}Connected` as any, false);
+    await revokeIntegration(provider as 'googleCalendar' | 'gmail' | 'microsoftCalendar' | 'outlookMail');
   };
 
   const handleSaveKey = async (provider: string, key: string) => {
@@ -53,10 +52,7 @@ export default function SettingsPage() {
   const handleChooseHosted = async () => {
     setIsSavingKey(true);
     try {
-      if (authUser) {
-        await updateDoc(doc(db, 'users', authUser.id), { plan: 'pro_hosted' });
-        // Needs a local state update or refetch, omitting for brevity
-      }
+      await chooseHostedPlan();
     } catch (err) {
       setKeyError('Failed to update plan.');
     } finally {
@@ -65,18 +61,17 @@ export default function SettingsPage() {
   };
 
   const handleRemoveKey = async () => {
-    if (authUser) {
-      await updateDoc(doc(db, 'users', authUser.id), { apiKeyProvider: null });
-      // Needs a local state update or refetch, omitting for brevity
-    }
+    await removeApiKey();
   };
 
+  // Keys must match UserPermissions in src/models/User.ts
   const permissionList = [
-    { key: 'allowEmailDelete', label: 'Allow deleting emails', desc: 'FlowMind can permanently delete or archive emails.' },
-    { key: 'allowEmailSend', label: 'Allow sending emails', desc: 'FlowMind can send drafts and replies automatically.' },
-    { key: 'allowEventCreate', label: 'Allow creating calendar events', desc: 'FlowMind can schedule new meetings.' },
-    { key: 'allowEventEdit', label: 'Allow editing calendar events', desc: 'FlowMind can reschedule or update existing events.' },
-    { key: 'allowEventDelete', label: 'Allow deleting calendar events', desc: 'FlowMind can cancel events from your calendar.' },
+    { key: 'canDeleteEmails', label: 'Allow deleting emails', desc: 'FlowMind can permanently trash emails.' },
+    { key: 'canSendEmails', label: 'Allow sending emails', desc: 'FlowMind can send drafts and replies automatically.' },
+    { key: 'canReplyEmails', label: 'Allow drafting replies', desc: 'FlowMind can create draft replies in Gmail.' },
+    { key: 'canCreateEvents', label: 'Allow creating calendar events', desc: 'FlowMind can schedule new meetings.' },
+    { key: 'canEditEvents', label: 'Allow editing calendar events', desc: 'FlowMind can reschedule or update existing events.' },
+    { key: 'canDeleteEvents', label: 'Allow deleting calendar events', desc: 'FlowMind can cancel events from your calendar.' },
   ];
 
   if (isLoading || !user) {
@@ -94,7 +89,7 @@ export default function SettingsPage() {
   return (
     <div className="h-full flex flex-col bg-base overflow-y-auto p-4 md:p-8">
       <div className="max-w-4xl w-full mx-auto pb-24 space-y-16">
-        
+
         <div>
           <h1 className="text-3xl font-bold text-text-primary mb-2">Settings</h1>
           <p className="text-muted">Manage your connected apps, AI models, and permissions.</p>
@@ -102,9 +97,7 @@ export default function SettingsPage() {
 
         {/* Section 1: Connected Accounts */}
         <section>
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            Connected Accounts
-          </h2>
+          <h2 className="text-xl font-bold mb-4">Connected Accounts</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <IntegrationCard
               name="Google Calendar"
@@ -126,7 +119,7 @@ export default function SettingsPage() {
             />
             <IntegrationCard
               name="Microsoft Calendar"
-              description="Read events and schedule meetings"
+              description="Read events and schedule meetings (coming soon)"
               icon='<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 2H11V11H2V2Z" fill="#F25022"/><path d="M13 2H22V11H13V2Z" fill="#7FBA00"/><path d="M2 13H11V22H2V13Z" fill="#00A4EF"/><path d="M13 13H22V22H13V13Z" fill="#FFB900"/></svg>'
               isConnected={microsoftCalendarConnected}
               onConnect={() => handleConnect('microsoftCalendar')}
@@ -136,7 +129,7 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Section 2: AI Model */}
+        {/* Section 2: AI Model (BYOK) */}
         <section>
           <h2 className="text-xl font-bold mb-4">AI Model</h2>
           <div className="bg-surface border border-border rounded-2xl p-6 md:p-8">
@@ -181,10 +174,11 @@ export default function SettingsPage() {
         {/* Section 3: Permissions */}
         <section>
           <h2 className="text-xl font-bold mb-4">Permissions</h2>
+          <p className="text-sm text-muted mb-4">Control what FlowMind is allowed to do on your behalf.</p>
           <div className="bg-surface border border-border rounded-2xl overflow-hidden divide-y divide-border">
             {permissionList.map(({ key, label, desc }) => {
-              const isChecked = permissions[key as keyof typeof permissions] as boolean;
-              
+              const isChecked = (permissions as unknown as Record<string, boolean>)[key] ?? false;
+
               return (
                 <div key={key} className="p-4 md:p-6 flex items-center justify-between gap-4 hover:bg-surface-offset/50 transition-colors">
                   <div className="flex-1">
@@ -196,7 +190,7 @@ export default function SettingsPage() {
                     aria-checked={isChecked}
                     onClick={() => updatePermissions({ [key]: !isChecked })}
                     className={cn(
-                      "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible-ring",
+                      "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:ring-2 focus-visible:ring-primary",
                       isChecked ? "bg-primary" : "bg-surface-offset"
                     )}
                   >
@@ -233,7 +227,7 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Section 5: Account */}
+        {/* Section 5: Danger Zone */}
         <section>
           <h2 className="text-xl font-bold mb-4 text-error/90">Danger Zone</h2>
           <div className="bg-surface border border-error/20 rounded-2xl p-6">
@@ -251,19 +245,19 @@ export default function SettingsPage() {
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <button
                 onClick={signOut}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-surface-offset hover:bg-surface-2 text-text-primary rounded-xl font-medium transition-colors focus-visible-ring"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-surface-offset hover:bg-surface-2 text-text-primary rounded-xl font-medium transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 Sign Out
               </button>
-              
+
               <button
                 onClick={() => {
                   if (window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-                    // Delete account logic
+                    // TODO: implement account deletion endpoint
                   }
                 }}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 hover:bg-error/10 text-error rounded-xl font-medium transition-colors focus-visible-ring sm:ml-auto text-sm"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 hover:bg-error/10 text-error rounded-xl font-medium transition-colors sm:ml-auto text-sm"
               >
                 <Trash2 className="w-4 h-4" />
                 Delete Account

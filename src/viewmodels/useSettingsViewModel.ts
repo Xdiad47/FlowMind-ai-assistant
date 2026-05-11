@@ -8,7 +8,7 @@ import type { AgentAction } from '@/models/AgentAction';
 import type { UserPermissions } from '@/models/User';
 
 export function useSettingsViewModel() {
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const integrations = useIntegrationStore();
   const [auditLog, setAuditLog] = useState<AgentAction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,6 +51,10 @@ export function useSettingsViewModel() {
     if (res.success) {
       integrations.setIntegration('apiKeySet', false);
       integrations.setApiProvider(null);
+      // Sync auth store: clear provider
+      if (user) {
+        setUser({ ...user, apiProvider: null, plan: 'free' });
+      }
     } else if (res.error) {
       setError(res.error.message);
     }
@@ -69,22 +73,40 @@ export function useSettingsViewModel() {
     }
   };
 
-  const updatePermissions = async (permissions: Partial<UserPermissions>) => {
+  const updatePermissions = async (changed: Partial<UserPermissions>) => {
     if (!user?.id) return;
     setError(null);
-    const res = await updateUserPermissionsService(user.id, permissions);
-    if (!res.success && res.error) {
+    // Merge with existing permissions — prevents partial update from wiping other fields
+    const merged: UserPermissions = { ...(user.permissions ?? {}), ...changed } as UserPermissions;
+    const res = await updateUserPermissionsService(user.id, merged);
+    if (res.success) {
+      // Optimistically update auth store so the UI reflects the change immediately
+      setUser({ ...user, permissions: merged });
+    } else if (res.error) {
       setError(res.error.message);
     }
-    // We expect auth store to trigger sync via useAuthViewModel typically, 
-    // but in a strict MVVM we might want to update the store right here if needed.
   };
 
   const updateBriefingHour = async (hour: number) => {
     if (!user?.id) return;
     setError(null);
     const res = await createOrUpdateUserProfile(user.id, { briefingHour: hour });
-    if (!res.success && res.error) {
+    if (res.success) {
+      setUser({ ...user, briefingHour: hour });
+    } else if (res.error) {
+      setError(res.error.message);
+    }
+  };
+
+  const chooseHostedPlan = async () => {
+    if (!user?.id) return;
+    setError(null);
+    const res = await createOrUpdateUserProfile(user.id, { plan: 'pro_hosted' });
+    if (res.success) {
+      setUser({ ...user, plan: 'pro_hosted', apiProvider: null });
+      integrations.setIntegration('apiKeySet', true);
+      integrations.setApiProvider('hosted');
+    } else if (res.error) {
       setError(res.error.message);
     }
   };
@@ -101,6 +123,7 @@ export function useSettingsViewModel() {
     removeApiKey,
     revokeIntegration,
     updatePermissions,
+    chooseHostedPlan,
     fetchAuditLog,
     updateBriefingHour,
   };

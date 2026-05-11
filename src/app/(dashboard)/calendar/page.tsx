@@ -3,16 +3,15 @@
 
 import React from 'react';
 import { useCalendarViewModel } from '@/viewmodels/useCalendarViewModel';
-import { EmptyState } from '@/components/shared/EmptyState';
 import { Calendar, RefreshCw, AlertTriangle, Users, MapPin, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isToday, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isToday } from 'date-fns';
 
 export default function CalendarPage() {
   const router = useRouter();
-  const { 
-    events, isLoading, todayEvents, allEventsSorted, 
+  const {
+    events, isLoading, todayEvents,
     eventsByDate, refreshEvents, currentMonth, navigateMonth,
     error
   } = useCalendarViewModel();
@@ -148,9 +147,9 @@ export default function CalendarPage() {
                                   ? "bg-accent/15 text-accent border-l-2 border-accent"
                                   : "bg-primary/15 text-primary border-l-2 border-primary"
                               )}
-                              title={`${event.title}${isAllDay ? ' (All day)' : ` — ${format(event.startTime, 'h:mm a')}`}`}
+                              title={`${event.title}${isAllDay ? ' (All day)' : ` — ${format(new Date(event.startTime), 'h:mm a')}`}`}
                             >
-                              {isAllDay ? event.title : `${format(event.startTime, 'h:mm')} ${event.title}`}
+                              {isAllDay ? event.title : `${format(new Date(event.startTime), 'h:mm')} ${event.title}`}
                             </div>
                             );
                           })}
@@ -202,7 +201,7 @@ export default function CalendarPage() {
                         <div className="flex items-center gap-1.5 mt-1 text-xs text-muted">
                           <Clock className="w-3 h-3" />
                           <span>{event.startTime.includes('T')
-                            ? `${format(event.startTime, 'h:mm a')} – ${format(event.endTime, 'h:mm a')}`
+                            ? `${format(new Date(event.startTime), 'h:mm a')} – ${format(new Date(event.endTime), 'h:mm a')}`
                             : 'All day'
                           }</span>
                         </div>

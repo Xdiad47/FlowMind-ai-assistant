@@ -1,5 +1,5 @@
 // src/viewmodels/useInboxViewModel.ts
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { getThreads, getInboxThreads, deleteThreads, archiveThreads, markAsRead } from '@/services/api/gmailService';
 import { useAuthStore } from '@/stores/authStore';
 import type { EmailThread } from '@/models/Email';
@@ -11,6 +11,7 @@ export function useInboxViewModel() {
   const [error, setError] = useState<string | null>(null);
   const [selectedThreadIds, setSelectedThreadIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchInboxThreads = useCallback(async () => {
     if (!user) return;
@@ -25,25 +26,39 @@ export function useInboxViewModel() {
     setIsLoading(false);
   }, [user]);
 
+  // Initial load
   useEffect(() => {
     fetchInboxThreads();
   }, [fetchInboxThreads]);
 
-  const fetchThreads = async (query?: string) => {
-    setIsLoading(true);
-    setError(null);
-    const res = await getThreads(query);
-    if (res.success && res.data) {
-      setThreads(res.data);
-    } else if (res.error) {
-      setError(res.error.message);
-    }
-    setIsLoading(false);
-  };
+  // Debounced search: waits 400ms after the user stops typing
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
-  const unreadCount = useMemo(() => {
-    return threads.filter((t) => !t.isRead).length;
-  }, [threads]);
+    debounceRef.current = setTimeout(async () => {
+      if (!user) return;
+      const q = searchQuery.trim();
+      if (!q) {
+        fetchInboxThreads();
+        return;
+      }
+      setIsLoading(true);
+      setError(null);
+      const res = await getThreads(`in:inbox ${q}`);
+      if (res.success && res.data) {
+        setThreads(res.data);
+      } else if (res.error) {
+        setError(res.error.message);
+      }
+      setIsLoading(false);
+    }, 400);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery, user, fetchInboxThreads]);
+
+  const unreadCount = useMemo(() => threads.filter((t) => !t.isRead).length, [threads]);
 
   const selectThread = (id: string) => {
     setSelectedThreadIds((prev) =>
@@ -87,7 +102,6 @@ export function useInboxViewModel() {
     selectedThreadIds,
     searchQuery,
     unreadCount,
-    fetchThreads,
     fetchInboxThreads,
     selectThread,
     selectAll,
