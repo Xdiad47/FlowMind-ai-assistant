@@ -5,8 +5,6 @@ import React, { useEffect } from 'react';
 import { useAuthViewModel } from '@/viewmodels/useAuthViewModel';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { PLANS } from '@/lib/constants';
-import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
 import { FullScreenSpinner } from '@/components/shared/FullScreenSpinner';
 
@@ -42,7 +40,7 @@ export default function LandingPage() {
           <span className="font-bold text-lg tracking-tight">FlowMind</span>
         </div>
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted mr-8">
-          <a href="#features" className="hover:text-text-primary transition-colors">Features</a>
+          <a href="#features" className="hover:text-text-primary transition-colors">What it does</a>
           <a href="#how-it-works" className="hover:text-text-primary transition-colors">How It Works</a>
           <a href="#pricing" className="hover:text-text-primary transition-colors">Pricing</a>
         </nav>
@@ -59,13 +57,14 @@ export default function LandingPage() {
         <section className="flex flex-col lg:flex-row items-center gap-12 lg:gap-24 mb-32">
           <div className="flex-1 text-center lg:text-left">
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 mb-6">
-              AI-Powered Productivity
+              Built for busy people
             </span>
             <h1 className="text-[clamp(2.5rem,5vw,4.5rem)] font-bold leading-[1.1] tracking-tight mb-6 text-text-hero">
-              Your AI Chief of Staff
+              Run your day with one chat box.
             </h1>
             <p className="text-lg md:text-xl text-muted max-w-2xl mx-auto lg:mx-0 mb-10 leading-relaxed">
-              FlowMind manages your calendar and inbox through natural language. Sign up, connect, and just talk.
+              FlowMind helps you manage Google Calendar and Gmail with simple messages.
+              Ask it to schedule events, find free slots, summarize inbox tasks, and clean up email.
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
               <button
@@ -83,7 +82,7 @@ export default function LandingPage() {
               </a>
             </div>
             <p className="mt-4 text-sm text-muted">
-              No setup. No API key required to start. Cancel anytime.
+              Start free. Connect Google. Use natural language.
             </p>
           </div>
 
@@ -107,7 +106,7 @@ export default function LandingPage() {
                     <span>Create Event (5x)</span>
                   </div>
                   <div className="bg-surface text-text-primary px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%] border border-border shadow-sm">
-                    <p className="whitespace-pre-wrap">✅ Done! I've blocked 9–11 AM Mon–Fri as 'Deep Work'.
+                    <p className="whitespace-pre-wrap">✅ Done! I&apos;ve blocked 9–11 AM Mon–Fri as &apos;Deep Work&apos;.
 
 You had 2 conflicts — I moved them to the afternoon.</p>
                   </div>
@@ -117,23 +116,34 @@ You had 2 conflicts — I moved them to the afternoon.</p>
           </div>
         </section>
 
-        {/* Social Proof */}
-        <div className="border-y border-border py-8 mb-32">
-          <p className="text-center text-sm font-medium text-muted uppercase tracking-widest">
-            Trusted by 500+ solo founders and freelancers
-          </p>
+        {/* Quick Value */}
+        <div className="mb-32 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="rounded-2xl border border-border bg-surface p-6">
+            <h3 className="font-semibold mb-2">Plan your calendar fast</h3>
+            <p className="text-sm text-muted">Create, move, and cancel events without opening multiple tabs.</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-surface p-6">
+            <h3 className="font-semibold mb-2">Handle inbox in minutes</h3>
+            <p className="text-sm text-muted">Search, summarize, archive, and draft replies from one place.</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-surface p-6">
+            <h3 className="font-semibold mb-2">Stay in control</h3>
+            <p className="text-sm text-muted">Approve actions, review results, and keep your workflow simple.</p>
+          </div>
         </div>
 
         {/* Features Section */}
         <section id="features" className="mb-32">
-          <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">Do more, manage less.</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">What FlowMind does for you.</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 bg-gradient-to-br from-surface to-surface-2 border border-border rounded-3xl p-8 md:p-12 min-h-[300px] flex flex-col relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-              <h3 className="text-2xl font-bold mb-4 z-10">Natural Language Calendar Control</h3>
+              <h3 className="text-2xl font-bold mb-4 z-10">Calendar tasks in plain English</h3>
               <p className="text-muted text-lg z-10 max-w-md">
-                FlowMind understands context. Say "move my 1pm to tomorrow" or "find 30 mins for John this week" and it handles the complex logic instantly.
+                Say what you want in your own words:
+                &quot;Set an event on Friday at 8 PM&quot; or &quot;Find a free slot this week.&quot;
+                FlowMind handles the calendar actions for you.
               </p>
             </div>
             
@@ -144,8 +154,8 @@ You had 2 conflicts — I moved them to the afternoon.</p>
                   <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-3">Gmail Automation</h3>
-              <p className="text-muted">Draft replies, summarize long threads, or bulk archive promotions in plain English.</p>
+              <h3 className="text-xl font-bold mb-3">Inbox actions without clutter</h3>
+              <p className="text-muted">Find important emails, summarize threads, and clean your inbox quickly.</p>
             </div>
             
             <div className="bg-surface border border-border rounded-3xl p-8 flex flex-col justify-center md:col-start-3">
@@ -156,15 +166,15 @@ You had 2 conflicts — I moved them to the afternoon.</p>
                   <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-3">BYOK</h3>
-              <p className="text-muted">Bring Your Own Key. Pay OpenAI, Anthropic, or Google directly with zero markup.</p>
+              <h3 className="text-xl font-bold mb-3">Safe, guided actions</h3>
+              <p className="text-muted">FlowMind confirms sensitive actions so you always stay in control.</p>
             </div>
           </div>
         </section>
 
         {/* How It Works */}
         <section id="how-it-works" className="mb-32">
-          <h2 className="text-3xl md:text-4xl font-bold mb-16 text-center">Get started in seconds.</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-16 text-center">Simple setup, smooth experience.</h2>
           
           <div className="flex flex-col md:flex-row items-start justify-between gap-8 relative">
             <div className="hidden md:block absolute top-8 left-12 right-12 h-0.5 bg-border -z-10" />
@@ -174,7 +184,7 @@ You had 2 conflicts — I moved them to the afternoon.</p>
                 1
               </div>
               <h3 className="text-xl font-bold mb-3">Sign up with Google</h3>
-              <p className="text-muted">One click to create your account. No complex forms to fill out.</p>
+              <p className="text-muted">One tap sign-in. No long forms.</p>
             </div>
             
             <div className="flex flex-col items-center text-center flex-1">
@@ -182,7 +192,7 @@ You had 2 conflicts — I moved them to the afternoon.</p>
                 2
               </div>
               <h3 className="text-xl font-bold mb-3">Connect your tools</h3>
-              <p className="text-muted">Authorize Calendar and Gmail. Provide your API key or use our hosted AI.</p>
+              <p className="text-muted">Enable Calendar and Gmail access in a guided flow.</p>
             </div>
             
             <div className="flex flex-col items-center text-center flex-1">
@@ -190,67 +200,70 @@ You had 2 conflicts — I moved them to the afternoon.</p>
                 3
               </div>
               <h3 className="text-xl font-bold mb-3">Just talk</h3>
-              <p className="text-muted">Type commands in natural English and FlowMind handles the rest.</p>
+              <p className="text-muted">Type your request and FlowMind executes it step by step.</p>
             </div>
           </div>
         </section>
 
         {/* Pricing */}
         <section id="pricing" className="mb-24">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, transparent pricing.</h2>
-            <p className="text-xl text-muted">Start for free, upgrade when you need to.</p>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Pricing made simple.</h2>
+            <p className="text-xl text-muted">Start free now. Upgrade only when you need more.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {Object.values(PLANS).map((plan) => {
-              const isPopular = plan.id === 'pro_hosted';
-              
-              return (
-                <div 
-                  key={plan.id}
-                  className={cn(
-                    "bg-surface rounded-3xl p-8 flex flex-col relative",
-                    isPopular ? "border-2 border-primary shadow-lg lg:-translate-y-4" : "border border-border"
-                  )}
-                >
-                  {isPopular && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                      Most Popular
-                    </div>
-                  )}
-                  
-                  <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                  <div className="flex items-baseline gap-1 mb-6">
-                    <span className="text-3xl font-bold">
-                      {plan.price.inr === 0 ? 'Free' : `₹${plan.price.inr}`}
-                    </span>
-                    {plan.price.inr !== 0 && <span className="text-muted text-sm">/mo</span>}
-                  </div>
-                  
-                  <ul className="space-y-4 mb-8 flex-1">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                        <span className="text-sm text-text-primary">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  <button
-                    onClick={signInWithGoogle}
-                    className={cn(
-                      "w-full py-3 rounded-xl font-semibold transition-colors focus-visible-ring",
-                      isPopular 
-                        ? "bg-primary hover:bg-primary-hover text-white shadow-md" 
-                        : "bg-surface-offset hover:bg-surface-2 text-text-primary border border-border"
-                    )}
-                  >
-                    {plan.price.inr === 0 ? 'Start Free' : 'Get Started'}
-                  </button>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div className="bg-surface border border-border rounded-3xl p-8">
+              <p className="text-sm font-semibold text-muted uppercase tracking-widest mb-3">Free</p>
+              <p className="text-4xl font-bold mb-1">₹0</p>
+              <p className="text-muted mb-6">Best for trying FlowMind</p>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0 mt-0.5" /><span>100 AI actions per month</span></li>
+                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0 mt-0.5" /><span>Google Calendar + Gmail integration</span></li>
+                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0 mt-0.5" /><span>Standard support</span></li>
+              </ul>
+              <button
+                onClick={signInWithGoogle}
+                className="w-full py-3 rounded-xl font-semibold bg-surface-offset hover:bg-surface-2 text-text-primary border border-border transition-colors focus-visible-ring"
+              >
+                Start Free
+              </button>
+            </div>
+
+            <div className="bg-surface border-2 border-primary rounded-3xl p-8 shadow-lg">
+              <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">Pro</p>
+              <p className="text-4xl font-bold mb-1">From ₹499<span className="text-base text-muted">/mo</span></p>
+              <p className="text-muted mb-6">Best for daily power users</p>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0 mt-0.5" /><span>Unlimited AI actions</span></li>
+                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0 mt-0.5" /><span>BYOK or hosted AI options</span></li>
+                <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0 mt-0.5" /><span>Priority support</span></li>
+              </ul>
+              <button
+                onClick={signInWithGoogle}
+                className="w-full py-3 rounded-xl font-semibold bg-primary hover:bg-primary-hover text-white transition-colors focus-visible-ring"
+              >
+                Continue with Google
+              </button>
+            </div>
+          </div>
+
+          <p className="text-center text-sm text-muted mt-6">
+            Detailed plan selection appears after sign in.
+          </p>
+        </section>
+
+        {/* Final CTA */}
+        <section className="mb-8">
+          <div className="rounded-3xl border border-border bg-gradient-to-br from-surface to-surface-2 p-8 md:p-12 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold mb-3">Ready to simplify your workday?</h2>
+            <p className="text-muted mb-6">FlowMind helps you stay on top of your calendar and inbox without extra effort.</p>
+            <button
+              onClick={signInWithGoogle}
+              className="px-8 py-3 bg-primary hover:bg-primary-hover text-white rounded-xl font-semibold transition-colors focus-visible-ring"
+            >
+              Start with Google
+            </button>
           </div>
         </section>
       </main>
