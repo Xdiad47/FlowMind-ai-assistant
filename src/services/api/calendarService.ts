@@ -49,6 +49,15 @@ export async function deleteEvent(eventId: string): Promise<ApiResponse<void>> {
   }
 }
 
+export async function getMicrosoftEvents(startDate: string, endDate: string): Promise<ApiResponse<CalendarEvent[]>> {
+  try {
+    const response = await apiClient.get<{ data: CalendarEvent[] }>(`/api/calendar/microsoft/events?start=${startDate}&end=${endDate}`);
+    return { success: true, data: response.data.data ?? response.data, error: null };
+  } catch (error) {
+    return { success: false, data: null, error: createError(error) };
+  }
+}
+
 export async function getAvailability(startDate: string, endDate: string): Promise<ApiResponse<TimeSlot[]>> {
   try {
     const response = await apiClient.get<{ data: TimeSlot[] }>(`/api/calendar/availability?start=${startDate}&end=${endDate}`);

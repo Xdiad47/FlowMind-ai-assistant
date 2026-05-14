@@ -36,12 +36,22 @@ export function useAuthViewModel() {
             const res = await fetch('/api/user');
             if (res.ok) {
               const data = await res.json();
-              if (data.success && data.data?.integrations) {
-                const integrations = data.data.integrations;
-                setIntegration('googleCalendarConnected', integrations.googleCalendar);
-                setIntegration('gmailConnected', integrations.gmail);
-                setIntegration('microsoftCalendarConnected', integrations.microsoftCalendar);
-                setIntegration('outlookConnected', integrations.outlookMail);
+              if (data.success && data.data) {
+                const { integrations, apiProvider, plan } = data.data;
+                if (integrations) {
+                  setIntegration('googleCalendarConnected', integrations.googleCalendar);
+                  setIntegration('gmailConnected', integrations.gmail);
+                  setIntegration('microsoftCalendarConnected', integrations.microsoftCalendar);
+                  setIntegration('outlookConnected', integrations.outlookMail);
+                }
+                if (apiProvider) setIntegration('apiKeySet', true);
+                setIntegration('apiProvider', apiProvider ?? null);
+                // Merge apiProvider + plan into user store so settings page reads them
+                setUser({
+                  ...(session.user as any),
+                  apiProvider: apiProvider ?? null,
+                  plan: plan ?? 'free',
+                });
               }
             }
           } catch (err) {
@@ -83,6 +93,16 @@ export function useAuthViewModel() {
     let success = false;
     if (res.success) {
       setIntegration('apiKeySet', true);
+      setIntegration('apiProvider', provider);
+      // Update user store so settings page switches to "Active AI Configuration" card
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
+        useAuthStore.getState().setUser({
+          ...currentUser,
+          apiProvider: provider as any,
+          plan: 'pro_byok',
+        });
+      }
       success = true;
     } else if (res.error) {
       setError(res.error.message);

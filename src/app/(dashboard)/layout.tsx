@@ -54,7 +54,7 @@ export default function DashboardLayout({
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-56'}`}>
         <TopBar
           title={pageTitle}
           googleCalendarConnected={integrations.googleCalendarConnected}

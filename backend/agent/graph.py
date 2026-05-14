@@ -6,8 +6,9 @@ from backend.agent.state import AgentState
 from backend.agent.nodes import agent_node, should_continue
 from backend.agent.tools.calendar_tools import CALENDAR_TOOLS
 from backend.agent.tools.gmail_tools import GMAIL_TOOLS
+from backend.agent.tools.microsoft_tools import MICROSOFT_TOOLS
 
-ALL_TOOLS = CALENDAR_TOOLS + GMAIL_TOOLS
+ALL_TOOLS = CALENDAR_TOOLS + GMAIL_TOOLS + MICROSOFT_TOOLS
 
 def build_graph(llm):
     """

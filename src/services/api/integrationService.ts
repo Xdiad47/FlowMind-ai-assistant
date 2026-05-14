@@ -30,6 +30,10 @@ export async function checkIntegrationStatus(userId: string): Promise<ApiRespons
   }
 }
 
+export function connectMicrosoftIntegration(userId: string): void {
+  window.location.href = `http://localhost:8000/auth/microsoft/login?user_id=${encodeURIComponent(userId)}`;
+}
+
 export async function revokeIntegration(integration: 'googleCalendar' | 'gmail' | 'microsoftCalendar' | 'outlookMail'): Promise<ApiResponse<void>> {
   try {
     await apiClient.post('/api/integrations/revoke', { integration });

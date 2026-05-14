@@ -9,7 +9,8 @@ class AgentState(TypedDict):
     # Runtime context injected before graph runs
     user_id: str
     conversation_id: str
-    access_token: str          # Google OAuth token (decrypted, valid)
+    access_token: str          # Google OAuth token
+    ms_access_token: str       # Microsoft OAuth token (empty if not connected)
     permissions: dict          # UserPermissions as dict
     plan: str                  # user plan for feature gating
     # Confirmation flow state

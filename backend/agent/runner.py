@@ -28,7 +28,8 @@ async def run_agent(
     access_token: str,
     permissions: dict,
     plan: str,
-    conversation_history: list
+    conversation_history: list,
+    ms_access_token: str = "",
 ):
     """
     Async generator that yields SSE-formatted dicts.
@@ -53,7 +54,7 @@ async def run_agent(
           yield { type: "error", content: str(exception) }
     """
     TOOL_LABELS = {
-        "get_calendar_events": "📅 Checking your calendar...",
+        "get_calendar_events": "📅 Checking Google Calendar...",
         "create_calendar_event": "📅 Creating event...",
         "delete_calendar_event": "📅 Removing event...",
         "get_availability": "📅 Checking availability...",
@@ -63,11 +64,13 @@ async def run_agent(
         "archive_emails": "📦 Archiving emails...",
         "mark_emails_as_read": "✅ Marking as read...",
         "draft_email_reply": "✍️ Drafting reply...",
+        "get_ms_calendar_events": "📅 Checking Microsoft Calendar...",
+        "search_outlook_emails": "📧 Searching Outlook...",
     }
     
     try:
         # 1. Set tool context via ContextVar
-        set_tool_context(access_token, user_id, permissions)
+        set_tool_context(access_token, user_id, permissions, ms_access_token)
         
         # 2. Get LLM for this user
         key_result = await get_user_api_key(user_id)
@@ -91,6 +94,7 @@ async def run_agent(
             user_id=user_id,
             conversation_id=conversation_id,
             access_token=access_token,
+            ms_access_token=ms_access_token,
             permissions=permissions,
             plan=plan,
             pending_confirmation=None,

@@ -1,7 +1,8 @@
 // src/app/(dashboard)/settings/page.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSettingsViewModel } from '@/viewmodels/useSettingsViewModel';
 import { useIntegrationStore } from '@/stores/integrationStore';
 import { useAuthViewModel } from '@/viewmodels/useAuthViewModel';
@@ -10,6 +11,7 @@ import { StepApiKey } from '@/components/onboarding/StepApiKey';
 import { Badge } from '@/components/shared/Badge';
 import { LogOut, Trash2, Key } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { connectMicrosoftIntegration } from '@/services/api/integrationService';
 
 export default function SettingsPage() {
   const { user, isLoading, updatePermissions, updateBriefingHour, removeApiKey, revokeIntegration, chooseHostedPlan } = useSettingsViewModel();
@@ -18,17 +20,31 @@ export default function SettingsPage() {
     canCreateEvents: true, canEditEvents: true, canDeleteEvents: false,
   };
   const briefingHour = user?.briefingHour ?? 8;
-  const { googleCalendarConnected, gmailConnected, microsoftCalendarConnected } = useIntegrationStore();
+  const { googleCalendarConnected, gmailConnected, microsoftCalendarConnected, outlookConnected, setIntegration } = useIntegrationStore();
   const { signOut, user: authUser, saveApiKey } = useAuthViewModel();
 
   const [isSavingKey, setIsSavingKey] = useState(false);
   const [keyError, setKeyError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const ms = searchParams.get('microsoft');
+    if (ms === 'connected') {
+      setIntegration('microsoftCalendarConnected', true);
+      setIntegration('outlookConnected', true);
+      window.history.replaceState({}, '', '/settings');
+    } else if (ms === 'error') {
+      setKeyError('Microsoft connection failed. Check your Azure credentials and try again.');
+      window.history.replaceState({}, '', '/settings');
+    }
+  }, [searchParams]);
 
   const handleConnect = async (provider: string) => {
-    // Google integrations are granted at OAuth login time — redirect to re-auth
     if (provider === 'googleCalendar' || provider === 'gmail') {
-      // Trigger Google sign-in to re-grant scopes
       window.location.href = '/api/auth/signin?callbackUrl=/settings';
+    } else if (provider === 'microsoftCalendar' || provider === 'outlookMail') {
+      if (!authUser?.id) return;
+      connectMicrosoftIntegration(authUser.id);
     }
   };
 
@@ -98,6 +114,11 @@ export default function SettingsPage() {
         {/* Section 1: Connected Accounts */}
         <section>
           <h2 className="text-xl font-bold mb-4">Connected Accounts</h2>
+          {keyError && keyError.includes('Microsoft') && (
+            <div className="mb-4 bg-error/10 border border-error/20 text-error px-4 py-3 rounded-xl text-sm font-medium">
+              {keyError}
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <IntegrationCard
               name="Google Calendar"
@@ -119,11 +140,20 @@ export default function SettingsPage() {
             />
             <IntegrationCard
               name="Microsoft Calendar"
-              description="Read events and schedule meetings (coming soon)"
+              description="Read events and schedule meetings via Microsoft Graph"
               icon='<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 2H11V11H2V2Z" fill="#F25022"/><path d="M13 2H22V11H13V2Z" fill="#7FBA00"/><path d="M2 13H11V22H2V13Z" fill="#00A4EF"/><path d="M13 13H22V22H13V13Z" fill="#FFB900"/></svg>'
               isConnected={microsoftCalendarConnected}
               onConnect={() => handleConnect('microsoftCalendar')}
               onRevoke={() => handleRevoke('microsoftCalendar')}
+              isLoading={false}
+            />
+            <IntegrationCard
+              name="Outlook Mail"
+              description="Read and search emails via Microsoft Outlook"
+              icon='<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="4" width="14" height="16" rx="2" fill="#0078D4"/><path d="M15 8l8-4v16l-8-4V8z" fill="#0078D4"/><ellipse cx="8" cy="12" rx="4" ry="5" fill="white"/><ellipse cx="8" cy="12" rx="2.5" ry="3.5" fill="#0078D4"/></svg>'
+              isConnected={outlookConnected}
+              onConnect={() => handleConnect('outlookMail')}
+              onRevoke={() => handleRevoke('outlookMail')}
               isLoading={false}
             />
           </div>

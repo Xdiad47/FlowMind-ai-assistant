@@ -5,16 +5,21 @@
 from contextvars import ContextVar
 
 _access_token: ContextVar[str] = ContextVar('access_token', default='')
+_ms_access_token: ContextVar[str] = ContextVar('ms_access_token', default='')
 _user_id: ContextVar[str] = ContextVar('user_id', default='')
 _permissions: ContextVar[dict] = ContextVar('permissions', default={})
 
-def set_tool_context(access_token: str, user_id: str, permissions: dict):
+def set_tool_context(access_token: str, user_id: str, permissions: dict, ms_access_token: str = ''):
     _access_token.set(access_token)
+    _ms_access_token.set(ms_access_token)
     _user_id.set(user_id)
     _permissions.set(permissions)
 
 def get_access_token() -> str:
     return _access_token.get()
+
+def get_ms_access_token() -> str:
+    return _ms_access_token.get()
 
 def get_user_id() -> str:
     return _user_id.get()

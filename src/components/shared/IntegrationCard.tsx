@@ -30,7 +30,7 @@ export function IntegrationCard({
       <div className="flex items-center gap-4 w-full">
         <div className="w-12 h-12 rounded-xl bg-surface-offset flex items-center justify-center shrink-0 overflow-hidden text-muted p-2">
           {isSvg ? (
-            <div dangerouslySetInnerHTML={{ __html: icon }} className="w-full h-full flex items-center justify-center" />
+            <div dangerouslySetInnerHTML={{ __html: icon }} className="w-full h-full flex items-center justify-center [&>svg]:w-full [&>svg]:h-full" />
           ) : (
             <img src={icon} alt={`${name} logo`} className="w-full h-full object-contain" />
           )}

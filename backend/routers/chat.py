@@ -31,7 +31,13 @@ async def stream_chat(
         forwarded_token = request.headers.get("x-google-access-token")
         access_token = await get_valid_google_token(user.id, forwarded_token)
     except Exception:
-        access_token = ""   # Will fail gracefully in tools if calendar not connected
+        access_token = ""
+
+    # Get Microsoft token if connected
+    try:
+        ms_access_token = await token_service.get_valid_microsoft_token(user.id) if user.integrations.microsoft_calendar else ""
+    except Exception:
+        ms_access_token = ""
 
     # Permissions as dict
     permissions = user.permissions.model_dump()
@@ -47,7 +53,8 @@ async def stream_chat(
             access_token=access_token,
             permissions=permissions,
             plan=user.plan.value,
-            conversation_history=conversation_history
+            conversation_history=conversation_history,
+            ms_access_token=ms_access_token,
         ):
             yield json.dumps(event_dict)
 
