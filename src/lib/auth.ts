@@ -30,7 +30,7 @@ export const authOptions: AuthOptions = {
         // Persist tokens to Firestore for backend usage
         if (token.sub && adminDb) {
           try {
-            await adminDb.doc(`users/${token.sub}`).set({
+            await adminDb!.doc(`users/${token.sub}`).set({
               google_access_token: account.access_token,
               google_refresh_token: account.refresh_token,
               google_token_expiry: account.expires_at,
@@ -65,7 +65,7 @@ export const authOptions: AuthOptions = {
 
             // Update Firestore with refreshed token
             if (token.sub && adminDb) {
-              await adminDb.doc(`users/${token.sub}`).set({
+              await adminDb!.doc(`users/${token.sub}`).set({
                 google_access_token: data.access_token,
                 google_token_expiry: token.expiresAt,
               }, { merge: true });
@@ -113,7 +113,7 @@ export const authOptions: AuthOptions = {
             updateData.google_token_expiry = account.expires_at;
           }
 
-          if (adminDb) await adminDb.doc(`users/${user.id}`).set(updateData, { merge: true });
+          if (adminDb) await adminDb!.doc(`users/${user.id}`).set(updateData, { merge: true });
           console.log('✅ User saved to Firestore:', user.id);
         }
       } catch (error) {

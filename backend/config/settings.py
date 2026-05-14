@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     google_client_secret: str = ""
     nextauth_secret: str = ""
     internal_api_secret: str = ""
+    azure_ad_client_id: str = ""
+    azure_ad_client_secret: str = ""
+    azure_ad_tenant_id: str = "common"
+    microsoft_redirect_uri: str = "http://localhost:8000/auth/microsoft/callback"
     
     model_config = SettingsConfigDict(env_file="backend/.env", extra="ignore")
 

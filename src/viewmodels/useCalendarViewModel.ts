@@ -1,7 +1,8 @@
 // src/viewmodels/useCalendarViewModel.ts
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { getEvents, getAvailability as getAvailabilityService } from '@/services/api/calendarService';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { getEvents, getMicrosoftEvents, getAvailability as getAvailabilityService } from '@/services/api/calendarService';
 import { useAuthStore } from '@/stores/authStore';
+import { useIntegrationStore } from '@/stores/integrationStore';
 import type { CalendarEvent, TimeSlot } from '@/models/CalendarEvent';
 
 function getMonthRange(date: Date) {
@@ -14,34 +15,55 @@ function getMonthRange(date: Date) {
 
 export function useCalendarViewModel() {
   const { user } = useAuthStore();
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const { microsoftCalendarConnected } = useIntegrationStore();
+  const [activeSource, setActiveSource] = useState<'google' | 'microsoft'>('google');
+  const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([]);
+  const [microsoftEvents, setMicrosoftEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
-  const dateRange = useMemo(() => getMonthRange(currentMonth), [currentMonth]);
+  const fetchedMsMonths = useRef<Set<string>>(new Set());
 
-  const fetchEvents = useCallback(async (start: string, end: string) => {
+  const dateRange = useMemo(() => getMonthRange(currentMonth), [currentMonth]);
+  const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
+
+  const fetchGoogleEvents = useCallback(async (start: string, end: string) => {
     if (!user) return;
-    
     setIsLoading(true);
     setError(null);
-    
     const res = await getEvents(start, end);
-    if (res.success && res.data) {
-      setEvents(res.data);
-    } else if (res.error) {
-      setError(res.error.message);
-    }
-    
+    if (res.success && res.data) setGoogleEvents(res.data);
+    else if (res.error) setError(res.error.message);
     setIsLoading(false);
   }, [user]);
 
-  useEffect(() => {
-    if (user) {
-      fetchEvents(dateRange.start, dateRange.end);
+  const fetchMicrosoftEvents = useCallback(async (start: string, end: string, key: string) => {
+    if (!user || !microsoftCalendarConnected) return;
+    setIsLoading(true);
+    setError(null);
+    const res = await getMicrosoftEvents(start, end);
+    if (res.success && res.data) {
+      setMicrosoftEvents(res.data);
+      fetchedMsMonths.current.add(key);
+    } else if (res.error) {
+      setError(res.error.message);
     }
-  }, [user, dateRange, fetchEvents]);
+    setIsLoading(false);
+  }, [user, microsoftCalendarConnected]);
+
+  // Always fetch Google on mount/month change
+  useEffect(() => {
+    if (user) fetchGoogleEvents(dateRange.start, dateRange.end);
+  }, [user, dateRange, fetchGoogleEvents]);
+
+  // Fetch Microsoft when source switches or month changes (lazy, cached per month)
+  useEffect(() => {
+    if (activeSource === 'microsoft' && user && !fetchedMsMonths.current.has(monthKey)) {
+      fetchMicrosoftEvents(dateRange.start, dateRange.end, monthKey);
+    }
+  }, [activeSource, dateRange, monthKey, fetchMicrosoftEvents, user]);
+
+  const events = activeSource === 'google' ? googleEvents : microsoftEvents;
 
   const todayEvents = useMemo(() => {
     const todayStr = new Date().toDateString();
@@ -61,21 +83,22 @@ export function useCalendarViewModel() {
 
   const getAvailability = async (start: string, end: string): Promise<TimeSlot[]> => {
     const res = await getAvailabilityService(start, end);
-    if (res.success && res.data) {
-      return res.data;
-    }
-    return [];
+    return res.success && res.data ? res.data : [];
   };
 
   const refreshEvents = useCallback(() => {
-    fetchEvents(dateRange.start, dateRange.end);
-  }, [dateRange, fetchEvents]);
+    if (activeSource === 'google') {
+      fetchGoogleEvents(dateRange.start, dateRange.end);
+    } else {
+      fetchedMsMonths.current.delete(monthKey);
+      fetchMicrosoftEvents(dateRange.start, dateRange.end, monthKey);
+    }
+  }, [activeSource, dateRange, monthKey, fetchGoogleEvents, fetchMicrosoftEvents]);
 
   const navigateMonth = (offset: number) => {
     setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + offset, 1));
   };
 
-  // Group events by date string for calendar grid
   const eventsByDate = useMemo(() => {
     const map: Record<string, CalendarEvent[]> = {};
     for (const event of events) {
@@ -88,6 +111,11 @@ export function useCalendarViewModel() {
 
   return {
     events,
+    googleEvents,
+    microsoftEvents,
+    activeSource,
+    setActiveSource,
+    microsoftCalendarConnected,
     isLoading,
     error,
     dateRange,
@@ -96,10 +124,9 @@ export function useCalendarViewModel() {
     upcomingEvents,
     allEventsSorted,
     eventsByDate,
-    fetchEvents,
+    fetchEvents: fetchGoogleEvents,
     getAvailability,
     refreshEvents,
     navigateMonth,
   };
 }
-

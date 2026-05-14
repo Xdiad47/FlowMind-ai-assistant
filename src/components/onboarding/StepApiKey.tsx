@@ -11,22 +11,61 @@ export interface StepApiKeyProps {
 }
 
 const PROVIDERS = [
-  { id: 'openai', label: 'OpenAI' },
-  { id: 'anthropic', label: 'Claude' },
-  { id: 'gemini', label: 'Gemini' },
-  { id: 'groq', label: 'Groq' },
+  { id: 'openai',    label: 'OpenAI',  prefix: 'sk-',     hint: 'Starts with sk-' },
+  { id: 'anthropic', label: 'Claude',  prefix: 'sk-ant-', hint: 'Starts with sk-ant-' },
+  { id: 'gemini',    label: 'Gemini',  prefix: 'AIza',    hint: 'Starts with AIza' },
+  { id: 'groq',      label: 'Groq',    prefix: 'gsk_',    hint: 'Starts with gsk_' },
 ];
+
+function validateKeyFormat(provider: string, key: string): string | null {
+  const current = PROVIDERS.find(p => p.id === provider);
+  if (!current) return null;
+
+  // Anthropic must be checked before OpenAI (both start with sk-)
+  const orderedProviders = ['anthropic', 'openai', 'gemini', 'groq'].map(id => PROVIDERS.find(p => p.id === id)!);
+
+  // Check if key matches a DIFFERENT provider's prefix
+  for (const p of orderedProviders) {
+    if (p.id === provider) continue;
+    if (key.startsWith(p.prefix)) {
+      return `This looks like a ${p.label} key. Switch to ${p.label} or paste a ${current.label} key.`;
+    }
+  }
+
+  // Check key matches the selected provider's own prefix
+  if (!key.startsWith(current.prefix)) {
+    return `${current.label} keys must start with "${current.prefix}". Check your key or select the correct provider.`;
+  }
+
+  return null;
+}
 
 export function StepApiKey({ onSaveKey, onChooseHosted, isSaving, error }: StepApiKeyProps) {
   const [selectedProvider, setSelectedProvider] = useState<string>('openai');
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleSave = () => {
-    if (apiKey.trim()) {
-      onSaveKey(selectedProvider, apiKey.trim());
-    }
+    const trimmed = apiKey.trim();
+    if (!trimmed) return;
+    const err = validateKeyFormat(selectedProvider, trimmed);
+    if (err) { setValidationError(err); return; }
+    setValidationError(null);
+    onSaveKey(selectedProvider, trimmed);
   };
+
+  const handleKeyChange = (val: string) => {
+    setApiKey(val);
+    if (validationError) setValidationError(null);
+  };
+
+  const handleProviderChange = (id: string) => {
+    setSelectedProvider(id);
+    if (validationError) setValidationError(null);
+  };
+
+  const displayError = validationError || error;
 
   return (
     <div className="max-w-4xl w-full mx-auto animate-in fade-in zoom-in-95">
@@ -54,15 +93,16 @@ export function StepApiKey({ onSaveKey, onChooseHosted, isSaving, error }: StepA
               {PROVIDERS.map(p => (
                 <button
                   key={p.id}
-                  onClick={() => setSelectedProvider(p.id)}
+                  onClick={() => handleProviderChange(p.id)}
                   className={cn(
-                    "px-3 py-2 border rounded-lg text-sm font-medium transition-colors focus-visible-ring",
-                    selectedProvider === p.id 
-                      ? "border-primary bg-primary/10 text-primary" 
+                    "px-3 py-2 border rounded-lg text-sm font-medium transition-colors focus-visible-ring text-left",
+                    selectedProvider === p.id
+                      ? "border-primary bg-primary/10 text-primary"
                       : "border-border hover:border-muted text-muted"
                   )}
                 >
-                  {p.label}
+                  <span className="block">{p.label}</span>
+                  <span className="block text-[10px] font-mono opacity-60">{p.hint}</span>
                 </button>
               ))}
             </div>
@@ -71,9 +111,12 @@ export function StepApiKey({ onSaveKey, onChooseHosted, isSaving, error }: StepA
               <input
                 type={showKey ? "text" : "password"}
                 value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Paste your API key"
-                className="w-full bg-surface-2 border border-border rounded-xl px-4 py-3 pr-10 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono text-sm"
+                onChange={(e) => handleKeyChange(e.target.value)}
+                placeholder={`Paste your ${PROVIDERS.find(p => p.id === selectedProvider)?.label ?? ''} API key`}
+                className={cn(
+                  "w-full bg-surface-2 border rounded-xl px-4 py-3 pr-10 outline-none focus:ring-1 transition-all font-mono text-sm",
+                  displayError ? "border-error focus:border-error focus:ring-error/30" : "border-border focus:border-primary focus:ring-primary"
+                )}
               />
               <button
                 type="button"
@@ -84,7 +127,7 @@ export function StepApiKey({ onSaveKey, onChooseHosted, isSaving, error }: StepA
               </button>
             </div>
 
-            {error && <p className="text-sm text-error">{error}</p>}
+            {displayError && <p className="text-sm text-error">{displayError}</p>}
 
             <div className="flex items-center gap-1.5 text-xs text-muted mt-2">
               <Lock className="w-3 h-3 shrink-0" />

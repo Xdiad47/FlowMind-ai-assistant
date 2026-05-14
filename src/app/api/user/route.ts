@@ -15,22 +15,24 @@ export async function GET() {
        return NextResponse.json({ error: 'User ID not found' }, { status: 400 });
     }
 
-    const userDoc = await adminDb.doc(`users/${userId}`).get();
+    const userDoc = await adminDb!.doc(`users/${userId}`).get();
     
     if (!userDoc.exists) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
 
     const userData = userDoc.data();
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       data: {
         integrations: userData?.integrations || {
           googleCalendar: true,
           gmail: true,
           microsoftCalendar: false,
           outlookMail: false
-        }
+        },
+        apiProvider: userData?.api_provider ?? null,
+        plan: userData?.plan ?? 'free',
       }
     });
   } catch (error) {

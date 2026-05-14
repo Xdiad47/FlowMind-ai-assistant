@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
     const encrypted = encryptApiKey(body.key, userId);
 
-    await adminDb.doc(`users/${userId}`).update({
+    await adminDb!.doc(`users/${userId}`).update({
       api_provider: body.provider,
       api_key_encrypted: encrypted
     });
@@ -61,7 +61,7 @@ export async function DELETE(req: Request) {
   if (!userId) return new NextResponse('Unauthorized', { status: 401 });
 
   try {
-    await adminDb.doc(`users/${userId}`).update({
+    await adminDb!.doc(`users/${userId}`).update({
       api_provider: FieldValue.delete(),
       api_key_encrypted: FieldValue.delete()
     });

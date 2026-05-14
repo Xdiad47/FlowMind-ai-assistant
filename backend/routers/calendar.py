@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from backend.models.calendar import CreateEventRequest
 from backend.models.user import UserProfile
 from backend.middleware.auth_middleware import get_current_user, require_integration
-from backend.services import token_service, calendar_service
+from backend.services import token_service, calendar_service, microsoft_calendar_service
 from backend.routers.gmail import log_action
 
 router = APIRouter(prefix="/calendar", tags=["calendar"])
@@ -48,6 +48,17 @@ async def delete_event(
     await calendar_service.delete_event(access_token, event_id)
     await log_action(user.id, "calendar", "delete_event", f"Deleted event ID: {event_id}", False)
     return {"success": True, "data": None}
+
+@router.get("/microsoft/events")
+async def get_microsoft_events(
+    start: str, end: str,
+    user: UserProfile = Depends(get_current_user)
+):
+    if not user.integrations.microsoft_calendar:
+        return {"success": False, "error": {"code": "NOT_CONNECTED", "message": "Microsoft Calendar not connected. Connect it in Settings."}}
+    access_token = await token_service.get_valid_microsoft_token(user.id)
+    events = await microsoft_calendar_service.get_events(access_token, start, end)
+    return {"success": True, "data": [e.model_dump(by_alias=True) for e in events]}
 
 @router.get("/availability")
 async def get_availability(

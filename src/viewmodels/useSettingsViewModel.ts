@@ -39,6 +39,7 @@ export function useSettingsViewModel() {
     if (res.success) {
       integrations.setIntegration('apiKeySet', true);
       integrations.setApiProvider(provider);
+      if (user) setUser({ ...user, apiProvider: provider as any, plan: 'pro_byok' });
     } else if (res.error) {
       setError(res.error.message);
     }
