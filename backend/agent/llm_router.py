@@ -18,7 +18,7 @@ def get_llm(provider: str | None, api_key: str | None, plan: str):
         if settings.platform_groq_api_key:
             return ChatGroq(
                 api_key=settings.platform_groq_api_key,
-                model="meta-llama/llama-4-scout-17b-16e-instruct",
+                model="llama-3.3-70b-versatile",
                 temperature=0,
             )
         # Fallback to Gemini if available
@@ -52,6 +52,6 @@ def get_llm(provider: str | None, api_key: str | None, plan: str):
         case ApiProvider.GROQ | _:
             return ChatGroq(
                 api_key=api_key,
-                model="meta-llama/llama-4-scout-17b-16e-instruct",
+                model="llama-3.3-70b-versatile",
                 temperature=0,
             )

@@ -1,6 +1,8 @@
 // src/components/chat/MessageBubble.tsx
 import React, { useState } from 'react';
 import { RefreshCcw, CheckCircle2, XCircle, Loader2, Copy, Check } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { Message } from '@/models/Message';
 import { formatRelativeTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -58,12 +60,36 @@ export function MessageBubble({ message, isLast }: MessageBubbleProps) {
           isError && "border border-error/50 relative"
         )}
       >
-        <p className="whitespace-pre-wrap break-words leading-relaxed">
-          {message.content}
-          {!isUser && isLast && isSending && (
-            <span className="inline-block w-1.5 h-4 ml-1 bg-current animate-bounce align-middle" style={{ animationDuration: '1s' }} />
-          )}
-        </p>
+        {isUser ? (
+          <p className="whitespace-pre-wrap break-words leading-relaxed">
+            {message.content}
+          </p>
+        ) : (
+          <div className="break-words text-text-primary text-sm leading-relaxed">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                p: ({ children }) => <p className="my-1 leading-relaxed">{children}</p>,
+                h1: ({ children }) => <h1 className="text-lg font-semibold mt-3 mb-1 text-text-primary">{children}</h1>,
+                h2: ({ children }) => <h2 className="text-base font-semibold mt-3 mb-1 text-text-primary">{children}</h2>,
+                h3: ({ children }) => <h3 className="text-sm font-semibold mt-2 mb-1 text-text-primary">{children}</h3>,
+                strong: ({ children }) => <strong className="font-semibold text-text-primary">{children}</strong>,
+                em: ({ children }) => <em className="italic text-muted">{children}</em>,
+                ul: ({ children }) => <ul className="my-1 pl-5 list-disc space-y-0.5">{children}</ul>,
+                ol: ({ children }) => <ol className="my-1 pl-5 list-decimal space-y-0.5">{children}</ol>,
+                li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                hr: () => <hr className="my-3 border-border" />,
+                code: ({ children }) => <code className="bg-surface-offset px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+                blockquote: ({ children }) => <blockquote className="border-l-2 border-primary/40 pl-3 italic text-muted my-2">{children}</blockquote>,
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+            {isLast && isSending && (
+              <span className="inline-block w-1.5 h-4 ml-1 bg-current animate-bounce align-middle" style={{ animationDuration: '1s' }} />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Footer / Status */}
