@@ -1,0 +1,9 @@
+# Root repo hygiene
+
+# Backend secrets and runtime
+backend/.env
+backend/__pycache__/
+backend/**/__pycache__/
+
+# macOS
+.DS_Store
