@@ -51,7 +51,7 @@ async def microsoft_callback(
     error: str = Query(None),
     error_description: str = Query(None),
 ):
-    frontend_base = "http://localhost:3000/settings"
+    frontend_base = f"{settings.frontend_url.rstrip('/')}/settings"
 
     if error:
         logging.error(f"Microsoft OAuth error: {error} — {error_description}")

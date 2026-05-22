@@ -19,7 +19,10 @@ class Settings(BaseSettings):
     azure_ad_client_secret: str = ""
     azure_ad_tenant_id: str = "common"
     microsoft_redirect_uri: str = "http://localhost:8000/auth/microsoft/callback"
-    
+    # Frontend base URL — set to production domain in prod env vars.
+    # e.g. FRONTEND_URL=https://flowmind-frontend-alpha.vercel.app
+    frontend_url: str = "http://localhost:3000"
+
     model_config = SettingsConfigDict(env_file="backend/.env", extra="ignore")
 
 # Singleton instance
