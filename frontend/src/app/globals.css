@@ -1,0 +1,98 @@
+/* src/app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Colors (Light Mode) */
+    --primary: #01696f;
+    --primary-hover: #0c4e54;
+    --primary-active: #0f3638;
+    
+    --base: #ffffff;
+    --surface: #f3f4f6;
+    --surface-2: #e5e7eb;
+    --surface-offset: #d1d5db;
+    
+    --text-primary: #111827;
+    --text-muted: #4b5563;
+    --text-faint: #9ca3af;
+    
+    --border: #e5e7eb;
+
+    /* Spacing scale */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+    --space-20: 80px;
+    --space-24: 96px;
+    --space-32: 128px;
+
+    /* Fluid type scale */
+    --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+    --text-sm: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
+    --text-base: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+    --text-lg: clamp(1.125rem, 1rem + 0.625vw, 1.25rem);
+    --text-xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
+    --text-2xl: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+    --text-hero: clamp(2.5rem, 2rem + 2.5vw, 4rem);
+  }
+
+  [data-theme="dark"] {
+    /* Colors (Dark Mode - Default) */
+    --primary: #01696f;
+    --primary-hover: #0c4e54;
+    --primary-active: #0f3638;
+    
+    --base: #171614;
+    --surface: #1c1b19;
+    --surface-2: #201f1d;
+    --surface-offset: #2d2c2a;
+    
+    --text-primary: #cdccca;
+    --text-muted: #797876;
+    --text-faint: #5a5957;
+    
+    --border: #393836;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html,
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+    background-color: var(--base);
+    color: var(--text-primary);
+  }
+
+  ::selection {
+    background-color: var(--primary);
+    color: #ffffff;
+  }
+}
+
+@layer utilities {
+  .focus-visible-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base;
+  }
+  
+  /* Applying the focus-visible ring by default to focusable elements */
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--base), 0 0 0 4px var(--primary);
+  }
+}

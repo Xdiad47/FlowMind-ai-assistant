@@ -7,3 +7,6 @@ backend/**/__pycache__/
 
 # macOS
 .DS_Store
+
+# Git backups
+**/.git_backup
