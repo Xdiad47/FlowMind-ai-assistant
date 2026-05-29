@@ -164,11 +164,13 @@ async def generate_daily_briefing(
         _safe_ms_calendar(mscal_token, start_str, end_str),
     )
 
-    # Filter Outlook to today's messages only (inbox endpoint returns recent, not date-filtered)
+    # Filter Outlook to last 3 days — matches Gmail's newer_than:3d window
+    from datetime import timedelta
     today_str = now.strftime("%Y-%m-%d")
-    outlook_today = [m for m in outlook_msgs if m.get("date", "").startswith(today_str)]
-    if not outlook_today and outlook_msgs:
-        outlook_today = [m for m in outlook_msgs if not m.get("is_read", True)]
+    three_days_ago_str = (now - timedelta(days=3)).strftime("%Y-%m-%d")
+    outlook_today = [m for m in outlook_msgs if m.get("date", "") >= three_days_ago_str]
+    if not outlook_today:
+        outlook_today = outlook_msgs  # fallback: use all fetched if nothing in 3 days
 
     google_event_briefs = [
         CalendarEventBrief(
