@@ -1,6 +1,6 @@
 // src/components/layout/MobileNav.tsx
 import React from 'react';
-import { MessageSquare, Calendar, Inbox, ScrollText, Settings } from 'lucide-react';
+import { Sparkles, MessageSquare, Calendar, Inbox, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface MobileNavProps {
@@ -9,10 +9,10 @@ export interface MobileNavProps {
 }
 
 const navItems = [
+  { name: 'Briefing', icon: Sparkles, route: '/briefing' },
   { name: 'Chat', icon: MessageSquare, route: '/dashboard' },
   { name: 'Calendar', icon: Calendar, route: '/calendar' },
   { name: 'Inbox', icon: Inbox, route: '/inbox' },
-  { name: 'Log', icon: ScrollText, route: '/audit-log' },
   { name: 'Settings', icon: Settings, route: '/settings' },
 ];
 

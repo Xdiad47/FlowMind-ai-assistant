@@ -12,6 +12,7 @@ import { useAuthViewModel } from '@/viewmodels/useAuthViewModel';
 import { useIntegrationStore } from '@/stores/integrationStore';
 
 const PAGE_TITLES: Record<string, string> = {
+  '/briefing': 'Daily Briefing',
   '/dashboard': 'Chat',
   '/calendar': 'Calendar',
   '/inbox': 'Inbox',

@@ -6,13 +6,18 @@ import { useAuthStore } from '@/stores/authStore';
 import { useIntegrationStore } from '@/stores/integrationStore';
 import type { EmailThread } from '@/models/Email';
 
+// Module-level cache: survives tab switches for the session
+let _gmailCache: { data: EmailThread[]; at: number } | null = null;
+let _outlookCache: { data: EmailThread[]; at: number } | null = null;
+const INBOX_TTL = 2 * 60 * 1000; // 2 minutes
+
 export function useInboxViewModel() {
   const { user } = useAuthStore();
   const { outlookConnected } = useIntegrationStore();
   const [activeSource, setActiveSourceState] = useState<'gmail' | 'outlook'>('gmail');
-  const [gmailThreads, setGmailThreads] = useState<EmailThread[]>([]);
-  const [outlookThreads, setOutlookThreads] = useState<EmailThread[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [gmailThreads, setGmailThreads] = useState<EmailThread[]>(_gmailCache?.data ?? []);
+  const [outlookThreads, setOutlookThreads] = useState<EmailThread[]>(_outlookCache?.data ?? []);
+  const [isLoading, setIsLoading] = useState(_gmailCache === null);
   const [error, setError] = useState<string | null>(null);
   const [selectedThreadIds, setSelectedThreadIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,23 +25,37 @@ export function useInboxViewModel() {
 
   const threads = activeSource === 'gmail' ? gmailThreads : outlookThreads;
 
-  const fetchGmailInbox = useCallback(async () => {
+  const fetchGmailInbox = useCallback(async (force = false) => {
     if (!user) return;
+    if (!force && _gmailCache && Date.now() - _gmailCache.at < INBOX_TTL) {
+      setGmailThreads(_gmailCache.data);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     setError(null);
     const res = await getInboxThreads(30);
-    if (res.success && res.data) setGmailThreads(res.data);
-    else if (res.error) setError(res.error.message);
+    if (res.success && res.data) {
+      _gmailCache = { data: res.data, at: Date.now() };
+      setGmailThreads(res.data);
+    } else if (res.error) setError(res.error.message);
     setIsLoading(false);
   }, [user]);
 
-  const fetchOutlookInbox = useCallback(async () => {
+  const fetchOutlookInbox = useCallback(async (force = false) => {
     if (!user || !outlookConnected) return;
+    if (!force && _outlookCache && Date.now() - _outlookCache.at < INBOX_TTL) {
+      setOutlookThreads(_outlookCache.data);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     setError(null);
     const res = await getOutlookInbox(30);
-    if (res.success && res.data) setOutlookThreads(res.data);
-    else if (res.error) setError(res.error.message);
+    if (res.success && res.data) {
+      _outlookCache = { data: res.data, at: Date.now() };
+      setOutlookThreads(res.data);
+    } else if (res.error) setError(res.error.message);
     setIsLoading(false);
   }, [user, outlookConnected]);
 
@@ -96,8 +115,9 @@ export function useInboxViewModel() {
     if (confirm(`Delete ${selectedThreadIds.length} email(s)?`)) {
       setIsLoading(true);
       await deleteThreads(selectedThreadIds);
+      _gmailCache = null;
       clearSelection();
-      await fetchGmailInbox();
+      await fetchGmailInbox(true);
     }
   };
 
@@ -105,21 +125,23 @@ export function useInboxViewModel() {
     if (selectedThreadIds.length === 0 || activeSource !== 'gmail') return;
     setIsLoading(true);
     await archiveThreads(selectedThreadIds);
+    _gmailCache = null;
     clearSelection();
-    await fetchGmailInbox();
+    await fetchGmailInbox(true);
   };
 
   const markSelectedAsRead = async () => {
     if (selectedThreadIds.length === 0 || activeSource !== 'gmail') return;
     setIsLoading(true);
     await markAsRead(selectedThreadIds);
+    _gmailCache = null;
     clearSelection();
-    await fetchGmailInbox();
+    await fetchGmailInbox(true);
   };
 
   const fetchInboxThreads = useCallback(() => {
-    if (activeSource === 'gmail') fetchGmailInbox();
-    else fetchOutlookInbox();
+    if (activeSource === 'gmail') fetchGmailInbox(true);
+    else fetchOutlookInbox(true);
   }, [activeSource, fetchGmailInbox, fetchOutlookInbox]);
 
   return {

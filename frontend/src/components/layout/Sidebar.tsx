@@ -1,6 +1,6 @@
 // src/components/layout/Sidebar.tsx
 import React from 'react';
-import { MessageSquare, Calendar, Inbox, ScrollText, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles, MessageSquare, Calendar, Inbox, ScrollText, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface SidebarProps {
@@ -14,6 +14,7 @@ export interface SidebarProps {
 }
 
 const navItems = [
+  { name: 'Briefing', icon: Sparkles, route: '/briefing' },
   { name: 'Chat', icon: MessageSquare, route: '/dashboard' },
   { name: 'Calendar', icon: Calendar, route: '/calendar' },
   { name: 'Inbox', icon: Inbox, route: '/inbox' },

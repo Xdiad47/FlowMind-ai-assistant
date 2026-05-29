@@ -12,7 +12,7 @@ const OUTLOOK_ICON = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.
 
 export default function InboxPage() {
   const {
-    threads, isLoading, selectedThreadIds, searchQuery,
+    threads, isLoading, error, selectedThreadIds, searchQuery,
     unreadCount, selectThread, selectAll, clearSelection,
     deleteSelected, archiveSelected, markSelectedAsRead,
     setSearchQuery, activeSource, setActiveSource, outlookConnected
@@ -95,6 +95,13 @@ export default function InboxPage() {
           )}
         </div>
       </div>
+
+      {/* API error banner */}
+      {error && (
+        <div className="bg-red-500/10 border-b border-red-500/20 px-6 py-3 text-sm text-red-400 font-medium">
+          {error}
+        </div>
+      )}
 
       {/* Outlook not connected banner */}
       {isOutlook && !outlookConnected && (

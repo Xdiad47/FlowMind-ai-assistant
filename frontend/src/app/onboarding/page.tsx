@@ -70,7 +70,7 @@ export default function OnboardingPage() {
     try {
       const success = await saveApiKey(provider, key);
       if (success) {
-        router.push('/dashboard');
+        router.push('/briefing');
       } else {
         setError('Failed to save API key.');
       }
@@ -88,7 +88,7 @@ export default function OnboardingPage() {
         await updateDoc(doc(db, 'users', user.id), {
           plan: 'pro_hosted'
         });
-        router.push('/dashboard');
+        router.push('/briefing');
       }
     } catch (err) {
       setError('Failed to update plan.');

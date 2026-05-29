@@ -14,7 +14,7 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.push('/dashboard');
+      router.push('/briefing');
     }
   }, [isAuthenticated, isLoading, router]);
 
