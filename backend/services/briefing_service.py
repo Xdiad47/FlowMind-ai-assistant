@@ -70,13 +70,14 @@ async def _generate_ai_summaries(
     if not settings.platform_groq_api_key:
         return fallback_summary, []
 
+    # Take only the 5 most recent from each source (both APIs return newest-first)
     email_lines: list[str] = []
-    for t in gmail_threads[:10]:
+    for t in gmail_threads[:5]:
         name = t.from_contact.name or t.from_contact.email
         email_lines.append(
             f"[gmail:{t.id}] From: {name} | Subject: {t.subject} | Preview: {t.snippet[:120]}"
         )
-    for m in outlook_msgs[:10]:
+    for m in outlook_msgs[:5]:
         fc = m.get("from_contact", {})
         name = fc.get("name") or fc.get("email", "Unknown")
         email_lines.append(
@@ -112,7 +113,7 @@ Return ONLY valid JSON (no markdown, no explanation):
 
 Rules:
 - overall_summary: mention email count and event count, highlight the most important items
-- highlights: pick up to 5 Gmail highlights AND up to 5 Outlook highlights (10 total max)
+- highlights: generate one highlight for EVERY email listed above (all Gmail AND all Outlook)
 - Each summary should capture the key point (e.g. "Arun pinged you on Figma", "Tax deducted today")
 - id must exactly match the [source:id] prefix shown above (e.g. "gmail:abc123")
 - Return only JSON, nothing else"""
