@@ -8,35 +8,31 @@ import firebase_admin.firestore
 async def get_valid_google_token(user_id: str, forwarded_token: str | None = None) -> str:
     """
     Returns a valid Google access token for the given user.
-    Priority:
-    1. forwarded_token from the Next.js proxy (already refreshed by NextAuth)
-    2. Stored token in Firestore (refreshed if expired)
+    Always validates against Firestore and refreshes if expired.
+    The forwarded_token from NextAuth is used to update Firestore if it looks newer,
+    but we never return it blindly — Firestore + refresh logic is the source of truth.
     """
-    # If the proxy forwarded a fresh token, use it directly
-    if forwarded_token:
-        return forwarded_token
-
     db = firebase_admin.firestore.client()
     user_ref = db.collection('users').document(user_id)
     user_doc = user_ref.get()
-    
+
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
-        
+
     data = user_doc.to_dict()
     access_token = data.get('google_access_token')
     refresh_token = data.get('google_refresh_token')
     expiry_ts = data.get('google_token_expiry')
-    
-    if not access_token or not refresh_token:
+
+    if not refresh_token:
         raise HTTPException(status_code=401, detail="Google account not connected. Please sign out and sign in again.")
-        
-    # Check if expired (with 5 minute buffer)
+
+    # Check if Firestore token is still valid (30-min buffer to be safe)
     now = datetime.now(timezone.utc).timestamp()
-    if expiry_ts and expiry_ts > (now + 300):
+    if access_token and expiry_ts and expiry_ts > (now + 1800):
         return access_token
-        
-    # Refresh token
+
+    # Token expired — refresh it
     async with httpx.AsyncClient() as client:
         response = await client.post(
             "https://oauth2.googleapis.com/token",
@@ -47,21 +43,20 @@ async def get_valid_google_token(user_id: str, forwarded_token: str | None = Non
                 "grant_type": "refresh_token"
             }
         )
-        
+
         if response.status_code != 200:
             raise HTTPException(status_code=401, detail="Google token expired. Please sign out and sign in again.")
-            
+
         token_data = response.json()
         new_access_token = token_data['access_token']
         expires_in = token_data.get('expires_in', 3599)
         new_expiry = datetime.now(timezone.utc).timestamp() + expires_in
-        
-        # Store back to firestore
+
         user_ref.update({
             'google_access_token': new_access_token,
             'google_token_expiry': new_expiry
         })
-        
+
         return new_access_token
 
 async def get_valid_microsoft_token(user_id: str) -> str:

@@ -1,10 +1,13 @@
 # backend/routers/gmail.py
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
 from backend.models.gmail import DeleteThreadsRequest, ArchiveThreadsRequest, DraftReplyRequest
 from backend.models.user import UserProfile
 from backend.middleware.auth_middleware import get_current_user, require_integration
 from backend.services import token_service, gmail_service
 import firebase_admin.firestore
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/gmail", tags=["gmail"])
 
@@ -42,7 +45,16 @@ async def get_threads(
 ):
     forwarded_token = request.headers.get("x-google-access-token")
     access_token = await token_service.get_valid_google_token(user.id, forwarded_token)
-    threads = await gmail_service.search_threads(access_token, q, max)
+    try:
+        threads = await gmail_service.search_threads(access_token, q, max)
+    except Exception as e:
+        err_str = str(e)
+        logger.exception("Gmail API error for user %s: %s", user.id, err_str)
+        if "insufficient" in err_str.lower() or "403" in err_str:
+            raise HTTPException(status_code=403, detail="Gmail access denied — please sign out and sign back in to re-grant permissions.")
+        if "401" in err_str or "invalid credentials" in err_str.lower() or "token" in err_str.lower():
+            raise HTTPException(status_code=401, detail="Google token invalid or expired — please sign out and sign back in.")
+        raise HTTPException(status_code=502, detail=f"Gmail API error: {err_str[:300]}")
     return {"success": True, "data": [t.model_dump() for t in threads]}
 
 @router.delete("/threads")

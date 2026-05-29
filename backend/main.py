@@ -9,7 +9,7 @@ import firebase_admin
 from firebase_admin import credentials
 from backend.config.settings import settings
 from backend.middleware.rate_limiter import limiter
-from backend.routers import chat, calendar, gmail, keys, integrations, auth, outlook
+from backend.routers import chat, calendar, gmail, keys, integrations, auth, outlook, briefing
 
 # Initialize Firebase Admin using env vars from settings
 try:
@@ -43,6 +43,7 @@ app.include_router(keys.router, prefix="/api")
 app.include_router(integrations.router, prefix="/api")
 app.include_router(auth.router)
 app.include_router(outlook.router, prefix="/api")
+app.include_router(briefing.router, prefix="/api")
 
 @app.get("/health")
 async def health_check():
