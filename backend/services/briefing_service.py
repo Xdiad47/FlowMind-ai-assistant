@@ -17,7 +17,7 @@ async def _safe_gmail(token: str | None) -> list:
     if not token:
         return []
     try:
-        return await gmail_service.search_threads(token, "is:unread newer_than:3d", 20)
+        return await gmail_service.search_threads(token, "is:unread newer_than:3d category:primary", 20)
     except Exception as e:
         logger.warning(f"Gmail briefing fetch failed: {e}")
         return []
